@@ -1,0 +1,87 @@
+# prek configuration for Claude Atoll
+# Install:        prek install --hook-type pre-commit --hook-type pre-push
+# Run all files:  prek run --all-files
+# CI parity:      prek run --all-files --hook-stage manual
+#
+# Reference: https://prek.j178.dev/configuration/
+
+minimum_prek_version = "0.4.0"
+
+exclude = """(?x)^(
+  .*\\.xcodeproj/.*|
+  .*\\.xcworkspace/.*|
+  build/.*|
+  DerivedData/.*|
+  \\.build/.*|
+  releases/.*|
+  Pods/.*|
+  \\.sparkle-keys/.*|
+  .*\\.xcuserstate|
+  xcuserdata/.*
+)$"""
+
+# --- Built-in fast hooks (offline, zero setup) -------------------------------
+[[repos]]
+repo = "builtin"
+hooks = [
+  { id = "trailing-whitespace", args = ["--markdown-linebreak-ext=md"] },
+  { id = "end-of-file-fixer" },
+  { id = "mixed-line-ending", args = ["--fix=lf"] },
+  { id = "check-merge-conflict" },
+  { id = "check-case-conflict" },
+  { id = "check-added-large-files", args = ["--maxkb=1024"] },
+  { id = "detect-private-key" },
+  { id = "check-json" },
+  { id = "check-toml" },
+  { id = "check-yaml" },
+  { id = "no-commit-to-branch", args = ["--branch", "main"] },
+]
+
+# --- Swift formatting & linting (system tools from Homebrew) -----------------
+[[repos]]
+repo = "local"
+hooks = [
+  { id = "swiftformat", name = "swiftformat", language = "system", entry = "swiftformat", files = "\\.swift$" },
+  { id = "swiftlint",   name = "swiftlint",   language = "system", entry = "swiftlint lint --strict", files = "\\.swift$" },
+]
+
+# --- Shell scripts (scripts/*.sh) --------------------------------------------
+[[repos]]
+repo = "https://github.com/shellcheck-py/shellcheck-py"
+rev = "v0.11.0.1"
+hooks = [
+  { id = "shellcheck", files = "^scripts/.*\\.sh$" },
+]
+
+# --- Python hook (ClaudeAtoll/Resources/*.py) --------------------------------
+[[repos]]
+repo = "https://github.com/astral-sh/ruff-pre-commit"
+rev = "v0.15.13"
+hooks = [
+  { id = "ruff-check",  args = ["--fix"], files = "^ClaudeAtoll/Resources/.*\\.py$" },
+  { id = "ruff-format",                   files = "^ClaudeAtoll/Resources/.*\\.py$" },
+]
+
+# --- Markdown ----------------------------------------------------------------
+[[repos]]
+repo = "https://github.com/igorshubovych/markdownlint-cli"
+rev = "v0.48.0"
+hooks = [
+  { id = "markdownlint", args = ["--fix"], files = "\\.(md|markdown)$", exclude = "^(\\.augment/|LICENSE\\.md)" },
+]
+
+# --- Conventional Commits (commit-msg stage) ---------------------------------
+[[repos]]
+repo = "https://github.com/compilerla/conventional-pre-commit"
+rev = "v4.4.0"
+hooks = [
+  { id = "conventional-pre-commit", stages = ["commit-msg"] },
+]
+
+# --- Secret / credential leak guard ------------------------------------------
+[[repos]]
+repo = "https://github.com/gitleaks/gitleaks"
+rev = "v8.30.1"
+hooks = [
+  { id = "gitleaks" },
+]
