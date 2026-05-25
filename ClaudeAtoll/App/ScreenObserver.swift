@@ -22,12 +22,16 @@ final class ScreenObserver {
         if let observer {
             NotificationCenter.default.removeObserver(observer)
         }
+        if let wakeObserver {
+            NSWorkspace.shared.notificationCenter.removeObserver(wakeObserver)
+        }
     }
 
     // MARK: Private
 
     /// nonisolated(unsafe) allows deinit cleanup — safe because deinit has exclusive access
     nonisolated(unsafe) private var observer: Any?
+    nonisolated(unsafe) private var wakeObserver: Any?
     private let onScreenChange: () -> Void
     private var debounceTask: Task<Void, Never>?
 
@@ -38,6 +42,18 @@ final class ScreenObserver {
     private func startObserving() {
         self.observer = NotificationCenter.default.addObserver(
             forName: NSApplication.didChangeScreenParametersNotification,
+            object: nil,
+            queue: .main,
+        ) { [weak self] _ in
+            MainActor.assumeIsolated {
+                self?.scheduleScreenChange()
+            }
+        }
+
+        // Re-trigger window setup after display wakes — the panel can sink below other
+        // windows or have its level reset by the WindowServer during sleep/wake.
+        self.wakeObserver = NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.screensDidWakeNotification,
             object: nil,
             queue: .main,
         ) { [weak self] _ in
