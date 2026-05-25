@@ -24,6 +24,7 @@ enum HookInstaller {
 
     static let hookScriptName = "claude-atoll-state.py"
     static let legacyHookScriptName = "claude-island-state.py"
+    static let hookBinaryName = "claude-atoll-hook"
     static let managedHookScriptNames = [hookScriptName, legacyHookScriptName]
 
     /// Install hook script and update settings.json on app launch
@@ -32,6 +33,16 @@ enum HookInstaller {
         let claudeDir = FileManager.default.homeDirectoryForCurrentUser
             .appendingPathComponent(".claude")
         let hooksDir = claudeDir.appendingPathComponent("hooks")
+
+        // If a custom Rust hook binary is present, skip Python installation entirely.
+        // Falls back to Python automatically if the binary is removed.
+        for binaryName in [Self.hookBinaryName, "\(Self.hookBinaryName)-debug"] {
+            if FileManager.default.fileExists(atPath: hooksDir.appendingPathComponent(binaryName).path) {
+                Self.logger.info("Custom hook binary '\(binaryName, privacy: .public)' found — skipping Python hook installation")
+                return
+            }
+        }
+
         let pythonScript = hooksDir.appendingPathComponent(Self.hookScriptName)
         let legacyPythonScript = hooksDir.appendingPathComponent(Self.legacyHookScriptName)
         let settings = claudeDir.appendingPathComponent("settings.json")

@@ -49,11 +49,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
 
-        #if !SKIP_HOOK_INSTALLER
         self.hookInstallTask = Task(name: "hook-install") {
             await HookInstaller.installIfNeeded()
         }
-        #endif
         NSApplication.shared.setActivationPolicy(.accessory)
 
         // Check accessibility permission on launch
